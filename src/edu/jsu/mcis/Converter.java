@@ -58,16 +58,43 @@ public class Converter {
     
     @SuppressWarnings("unchecked")
     public static String csvToJson(String csvString) {
-        
+         
         String results = "";
         
         try {
-            
-            CSVReader reader = new CSVReader(new StringReader(csvString));
-            List<String[]> full = reader.readAll();
-            Iterator<String[]> iterator = full.iterator();
-            
-            // INSERT YOUR CODE HERE
+            //string reader reads character streams; used to create CSVReader
+            CSVReader reader = new CSVReader(new StringReader(csvString)); 
+            //invoke CSVReader's readAll() method to parse the string to a List of string arrays
+            List<String[]> full = reader.readAll(); 
+            //Create Iterator for the parsed iterable structure 
+            Iterator<String[]> iterator = full.iterator(); 
+             
+           String[] headers = iterator.next();                                  //get column headers
+           JSONArray colHeaders = new JSONArray();                              //container for column headers
+           for (String head: headers){                                          //iterate through headers array
+                colHeaders.add(head);                                           //add column headers to JSONArray
+           }
+           JSONArray rowHeaders = new JSONArray();                              //container for row headers
+           JSONArray dataArray = new JSONArray();                               //container for data (as integers)
+           LinkedHashMap<String, JSONArray> jsonObject = new LinkedHashMap<>(); //Container for all records
+           String[] record;                                                     //array to get next single line (record)
+           
+           jsonObject.put("colHeaders", colHeaders);                            //add column headers key/value pair to JSONObject
+           
+           while(iterator.hasNext()){                                           //iterate through all records
+                record = iterator.next();                                       //get next record
+                rowHeaders.add(record[0]);                                      //add next row header to rowHeader array
+                int[] data = new int[headers.length-1];                         //new data array for current line
+                for(int i = 1; i < record.length; ++i){                         //iterate through rest of line
+                    data[i-1] = Integer.parseInt(record[i]);                    //add to items to array, converted to integer
+                }
+                dataArray.add(data);                                            //add integer array to dataArray
+            }
+           
+           jsonObject.put("rowHeaders", rowHeaders);                            //add row headers key/value
+           jsonObject.put("data", dataArray);                                   //add data arrays key/value
+
+           results = JSONValue.toJSONString(jsonObject);                        //encode as a JSON string
             
         }        
         catch(Exception e) { return e.toString(); }
@@ -80,12 +107,74 @@ public class Converter {
         
         String results = "";
         
+        
         try {
 
-            StringWriter writer = new StringWriter();
+            StringWriter writer = new StringWriter(); 
             CSVWriter csvWriter = new CSVWriter(writer, ',', '"', '\n');
             
             // INSERT YOUR CODE HERE
+            //decode JSON string into JSONObject
+            JSONParser parser = new JSONParser();
+            JSONObject jsonObject = (JSONObject)parser.parse(jsonString);
+            
+            //get JSONObject values into JSONArrays
+            JSONArray colHeaders = (JSONArray)jsonObject.get("colHeaders"); 
+            JSONArray rowHeaders = (JSONArray)jsonObject.get("rowHeaders"); 
+            JSONArray data = (JSONArray)jsonObject.get("data"); 
+            
+            //TEST PRINTOUT (ERASE LATER)
+            System.out.println(colHeaders);
+            System.out.println(rowHeaders);
+            System.out.println(data);
+            
+            
+            //*********************************************************
+            //*********************************************************
+            //store column headers (first row) in string array
+            String[] csvColHeaders = new String[colHeaders.size()];
+            for(int i = 0; i < colHeaders.size(); ++i){
+                csvColHeaders[i] = colHeaders.get(i).toString();
+            }
+            //Encode column headers in CSV format
+            csvWriter.writeNext(csvColHeaders);
+            //*********************************************************
+            //*********************************************************
+            
+            
+            //*********************************************************
+            //*********************************************************
+            //get the next lines of data for csv
+            for (int i = 0; i < rowHeaders.size(); ++i){//iterate through each row ID
+                //create new String[] array for the next line; resets once we reach the next row header
+                String[] csvNextLine = new String[colHeaders.size()];
+                //set first item to current ID in JSONArray rowHeaders
+                csvNextLine[0] = rowHeaders.get(i).toString();
+                //get data item i into a String[] array
+                String[] innerDataArray = new String[colHeaders.size()-1];
+                JSONArray innerArray = (JSONArray)data.get(i);
+                for (int k = 0; k < innerArray.size(); ++k){
+                    innerDataArray[k] = innerArray.get(k).toString();
+                }
+                //add the elements in innerDataArray to the csvNextLine array
+                for (int j = 0; j < innerDataArray.length; ++j){
+                    csvNextLine[j+1] = innerDataArray[j];
+                }
+                //set next line in csv
+                csvWriter.writeNext(csvNextLine);
+            }
+            
+            
+            //*********************************************************
+            //*********************************************************
+            
+            
+            
+            //export data to CSV string
+            results = writer.toString();
+            
+            
+            
             
         }
         
