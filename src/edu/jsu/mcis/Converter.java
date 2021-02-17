@@ -76,21 +76,22 @@ public class Converter {
            }
            JSONArray rowHeaders = new JSONArray();                              //container for row headers
            JSONArray dataArray = new JSONArray();                               //container for data (as integers)
-           LinkedHashMap<String, JSONArray> jsonObject = new LinkedHashMap<>(); //Container for all records
+           JSONObject jsonObject = new JSONObject();
            String[] record;                                                     //array to get next single line (record)
-           
-           jsonObject.put("colHeaders", colHeaders);                            //add column headers key/value pair to JSONObject
-           
-           while(iterator.hasNext()){                                           //iterate through all records
+          
+           while(iterator.hasNext()){  //iterate through all records
                 record = iterator.next();                                       //get next record
                 rowHeaders.add(record[0]);                                      //add next row header to rowHeader array
-                int[] data = new int[headers.length-1];                         //new data array for current line
+                List<Integer> data = new ArrayList<>(); 
                 for(int i = 1; i < record.length; ++i){                         //iterate through rest of line
-                    data[i-1] = Integer.parseInt(record[i]);                    //add to items to array, converted to integer
+                    data.add(Integer.parseInt(record[i]));
                 }
+                
                 dataArray.add(data);                                            //add integer array to dataArray
             }
            
+           
+           jsonObject.put("colHeaders", colHeaders);                            //add column headers key/value pair to JSONObject
            jsonObject.put("rowHeaders", rowHeaders);                            //add row headers key/value
            jsonObject.put("data", dataArray);                                   //add data arrays key/value
 
@@ -122,15 +123,7 @@ public class Converter {
             JSONArray colHeaders = (JSONArray)jsonObject.get("colHeaders"); 
             JSONArray rowHeaders = (JSONArray)jsonObject.get("rowHeaders"); 
             JSONArray data = (JSONArray)jsonObject.get("data"); 
-            
-            //TEST PRINTOUT (ERASE LATER)
-            System.out.println(colHeaders);
-            System.out.println(rowHeaders);
-            System.out.println(data);
-            
-            
-            //*********************************************************
-            //*********************************************************
+
             //store column headers (first row) in string array
             String[] csvColHeaders = new String[colHeaders.size()];
             for(int i = 0; i < colHeaders.size(); ++i){
@@ -138,12 +131,7 @@ public class Converter {
             }
             //Encode column headers in CSV format
             csvWriter.writeNext(csvColHeaders);
-            //*********************************************************
-            //*********************************************************
-            
-            
-            //*********************************************************
-            //*********************************************************
+
             //get the next lines of data for csv
             for (int i = 0; i < rowHeaders.size(); ++i){//iterate through each row ID
                 //create new String[] array for the next line; resets once we reach the next row header
@@ -163,19 +151,10 @@ public class Converter {
                 //set next line in csv
                 csvWriter.writeNext(csvNextLine);
             }
-            
-            
-            //*********************************************************
-            //*********************************************************
-            
-            
-            
+
             //export data to CSV string
             results = writer.toString();
-            
-            
-            
-            
+   
         }
         
         catch(Exception e) { return e.toString(); }
